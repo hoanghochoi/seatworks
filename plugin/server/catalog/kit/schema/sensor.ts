@@ -5,18 +5,41 @@ import { Json, text } from "./fields.ts";
 /** `catalog/attention.json`: every watch threshold and pattern with its default, which a settings layer may override. */
 export const AttentionFile = AttentionChoice.required().extend({ sensor: z.string() });
 
-/** A model the watch may ask over HTTP; `key` names the secret it takes, which the machine settings keep. */
-export const SensorFile = z.strictObject({
+const SensorProviderFile = z.strictObject({
   id: text,
   label: text,
-  key: text,
-  url: z.url({ protocol: /^https$/, error: "is not an https address" }),
-  model: text,
-  terms: text,
+  key: text.optional(),
+  url: z.url({ protocol: /^https$/, error: "is not an https address" }).optional(),
+  model: text.optional(),
+  terms: text.optional(),
   body: Json.optional(),
-  timeoutSeconds: z.number().min(1).max(30),
-  retries: z.number().int().min(0).max(3),
+  timeoutSeconds: z.number().min(1).max(30).optional(),
+  retries: z.number().int().min(0).max(3).optional(),
 });
+
+/** A model the watch may ask over HTTP; `key` names the secret it takes, which the machine settings keep. */
+export const SensorFile = z
+  .strictObject({
+    id: text,
+    label: text,
+    key: text,
+    url: z.url({ protocol: /^https$/, error: "is not an https address" }),
+    model: text,
+    terms: text,
+    body: Json.optional(),
+    timeoutSeconds: z.number().min(1).max(30),
+    retries: z.number().int().min(0).max(3),
+    defaultProvider: text.optional(),
+    providers: z.array(SensorProviderFile).min(1).optional(),
+  })
+  .superRefine((sensor, context) => {
+    if (!sensor.providers) return;
+    const ids = new Set(sensor.providers.map((provider) => provider.id));
+    if (ids.size !== sensor.providers.length)
+      context.addIssue({ code: "custom", path: ["providers"], message: "has duplicate provider ids" });
+    if (!sensor.defaultProvider || !ids.has(sensor.defaultProvider))
+      context.addIssue({ code: "custom", path: ["defaultProvider"], message: "does not name one of its providers" });
+  });
 
 /** A field the code fills is null in `instructions` until the moment it is asked at fills it; `question` is the question itself. */
 const Instructions = z.union([

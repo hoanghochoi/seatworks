@@ -123,13 +123,12 @@ function brainsOf(kit: Kit, attention: Attention, layers: Layer[], errors: strin
     errors.push(
       `The watch's sensor is ${attention.sensor || "not named"}, which is no sensor the kit knows (${Object.keys(kit.sensors).join(", ") || "none"})`,
     );
-  const key = layers
-    .map((layer) => layer.sensor?.[attention.sensor]?.key)
-    .filter(Boolean)
-    .at(-1);
+  const provider = found ? providerOf(found, attention.sensor, layers, errors) : undefined;
+  const sensor = found ? sensorFor(found, provider) : undefined;
+  const key = found ? keyFor(found, attention.sensor, provider, layers) : undefined;
   return {
     mode,
-    ...(found && mode !== "seat" ? { sensor: { id: attention.sensor, sensor: found, ...(key ? { key } : {}) } } : {}),
+    ...(sensor && mode !== "seat" ? { sensor: { id: attention.sensor, sensor, ...(key ? { key } : {}) } } : {}),
     ...(seat && mode !== "sensor" ? { seat } : {}),
   };
 }
@@ -146,11 +145,42 @@ function reviewOf(kit: Kit, layers: Layer[], errors: string[]): ReviewJudge {
     if (id) errors.push(`Review's sensor is ${id}, which is no sensor the kit knows`);
     return {};
   }
-  const key = layers
-    .map((layer) => layer.sensor?.[id]?.key)
+  const provider = providerOf(found, id, layers, errors);
+  const sensor = sensorFor(found, provider);
+  const key = keyFor(found, id, provider, layers);
+  return sensor ? { sensor: { id, sensor, ...(key ? { key } : {}) } } : {};
+}
+
+function providerOf(sensor: SensorSpec, id: string, layers: Layer[], errors: string[]): string | undefined {
+  const chosen = layers
+    .map((layer) => layer.sensor?.[id]?.provider)
     .filter(Boolean)
     .at(-1);
-  return { sensor: { id, sensor: found, ...(key ? { key } : {}) } };
+  const provider = chosen ?? sensor.defaultProvider;
+  if (sensor.providers && !sensor.providers.some((option) => option.id === provider))
+    errors.push(`${sensor.label} names unknown provider ${provider ?? "none"}`);
+  if (!sensor.providers && provider !== undefined) errors.push(`${sensor.label} has no provider named ${provider}`);
+  return provider;
+}
+
+function sensorFor(sensor: SensorSpec, provider: string | undefined): SensorSpec | undefined {
+  if (!sensor.providers) return sensor;
+  const option = sensor.providers.find((entry) => entry.id === provider);
+  if (!option) return undefined;
+  const { id: _id, label: _label, ...overrides } = option;
+  return { ...sensor, ...overrides };
+}
+
+function keyFor(sensor: SensorSpec, id: string, provider: string | undefined, layers: Layer[]): string | undefined {
+  const defaultProvider = sensor.defaultProvider;
+  return layers
+    .map((layer) => {
+      const choice = layer.sensor?.[id];
+      if (!choice?.key || (choice.keyProvider ?? defaultProvider) !== provider) return undefined;
+      return choice.key;
+    })
+    .filter(Boolean)
+    .at(-1);
 }
 
 function stripUndefined<T extends object>(value: T | undefined): Partial<T> {

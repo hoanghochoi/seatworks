@@ -38,5 +38,22 @@ export function describeCatalog(kit: Kit): CatalogView {
       model: sensor.model,
       terms: sensor.terms,
     })),
+    sensorProviders: Object.fromEntries(
+      Object.values(kit.sensors)
+        .filter((sensor) => sensor.providers)
+        .map((sensor) => [
+          sensor.id,
+          {
+            default: sensor.defaultProvider!,
+            options: sensor.providers!.map((provider) => ({
+              id: provider.id,
+              label: provider.label,
+              key: provider.key ?? sensor.key,
+              model: provider.model ?? sensor.model,
+              terms: provider.terms ?? sensor.terms,
+            })),
+          },
+        ]),
+    ),
   };
 }

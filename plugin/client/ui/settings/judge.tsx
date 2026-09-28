@@ -1,11 +1,17 @@
 import type { PluginTheme } from "@getpaseo/plugin";
-import { SettingsAction, SettingsInput, type SettingsInputHandle, SettingsRow } from "@getpaseo/plugin/client/ui";
+import {
+  SettingsAction,
+  SettingsInput,
+  type SettingsInputHandle,
+  SettingsRow,
+  SettingsSelect,
+} from "@getpaseo/plugin/client/ui";
 import { type ReactElement, type RefObject, useRef, useState } from "react";
 import { Text } from "react-native";
 import { KEPT, type Layer } from "../../../shared/settings.ts";
 import type { CatalogView, TeamView } from "../../../shared/views.ts";
 import { sourceLabel } from "./source.ts";
-import { setAttention, sourceOf, withKey } from "../../model/layer.ts";
+import { setAttention, setSensorProvider, sourceOf, withKey } from "../../model/layer.ts";
 import { Rows } from "../kit/card.tsx";
 import { TabBar } from "../kit/tab-bar.tsx";
 import { FONT, SPACE } from "../kit/theme.ts";
@@ -24,12 +30,14 @@ type Props = {
 };
 
 type Sensor = CatalogView["sensors"][number];
+type ProviderCatalog = NonNullable<CatalogView["sensorProviders"]>[string];
 
 type Draft = { typed: string; setDraft: (text: string) => void; field: RefObject<SettingsInputHandle | null> };
 
 /** Rows, not a component, since the card borders each child it gets; `asks` says what a paid call is spent on. */
 export function keyRows(
   {
+    catalog,
     sensor,
     values,
     machine,
@@ -38,13 +46,23 @@ export function keyRows(
     disabled,
     save,
     role,
-  }: Pick<Props, "values" | "machine" | "layer" | "theme" | "disabled" | "save" | "role"> & { sensor: Sensor },
+  }: Pick<Props, "catalog" | "values" | "machine" | "layer" | "theme" | "disabled" | "save" | "role"> & {
+    sensor: Sensor;
+  },
   { typed, setDraft, field }: Draft,
   asks: string,
 ): ReactElement[] {
-  const kept = values.sensor?.[sensor.id]?.key === KEPT || machine.sensor?.[sensor.id]?.key === KEPT;
+  const providers = catalog.sensorProviders?.[sensor.id];
+  const providerId = activeProviderId(sensor, values, machine, providers);
+  const provider = providers?.options.find((option) => option.id === providerId);
+  const key = provider?.key ?? sensor.key;
+  const selectedModel = provider?.model ?? sensor.model;
+  const selectedTerms = provider?.terms ?? sensor.terms;
+  const keptFor = (entry: { key?: string; keyProvider?: string } | undefined) =>
+    entry?.key === KEPT && (entry.keyProvider ?? providers?.default) === providerId;
+  const kept = keptFor(values.sensor?.[sensor.id]) || keptFor(machine.sensor?.[sensor.id]);
   const write = (key: string | null) => {
-    void save((current) => withKey(current, sensor.id, key)).then((saved) => {
+    void save((current) => withKey(current, sensor.id, key, providerId)).then((saved) => {
       // The typed key is the owner's only copy, so it is cleared only once saved.
       if (!saved) return;
       setDraft("");
@@ -52,15 +70,15 @@ export function keyRows(
     });
   };
   const model = (
-    <SettingsRow key="sensor" label="Sensor" hint={`From catalog/sensor. ${sensor.terms}`}>
-      <Text style={{ color: theme.colors.foreground, fontSize: 14 }}>{sensor.model}</Text>
+    <SettingsRow key="sensor" label="Sensor" hint={`From catalog/sensor. ${selectedTerms}`}>
+      <Text style={{ color: theme.colors.foreground, fontSize: 14 }}>{selectedModel}</Text>
     </SettingsRow>
   );
   if (layer === "project") {
     return [
       <SettingsRow
         key="key"
-        label={sensor.key}
+        label={key}
         hint={`Kept on this machine for every project. Add, replace or forget it under Machine defaults, on the ${role.label}.`}
       >
         <Text style={{ color: kept ? theme.colors.foreground : theme.colors.statusWarning, fontSize: 14 }}>
@@ -74,7 +92,7 @@ export function keyRows(
     <SettingsInput
       key="key"
       ref={field}
-      label={sensor.key}
+      label={key}
       hint={
         kept
           ? "Kept on this machine and never shown again. Type another to replace it."
@@ -115,6 +133,9 @@ export function JudgeRows(props: Props) {
   const field = useRef<SettingsInputHandle>(null);
   const { brain } = team.attention;
   const sensor = catalog.sensors.find((entry) => entry.id === team.attention.sensor);
+  const providers = sensor ? catalog.sensorProviders?.[sensor.id] : undefined;
+  const providerId = sensor ? activeProviderId(sensor, values, machine, providers) : undefined;
+  const selectedProvider = providers?.options.find((option) => option.id === providerId);
   const named = sensor?.label ?? "The sensor";
   const options = [
     { id: "off", label: "Off" },
@@ -144,6 +165,22 @@ export function JudgeRows(props: Props) {
           tabs={options}
         />
       </SettingsRow>
+      {sensor && providers && providers.options.length > 1 ? (
+        layer === "machine" ? (
+          <SettingsSelect
+            label="Provider"
+            hint={`Where ${sensor.label} sends the watch's decision request. The API key is kept per machine.`}
+            value={providerId ?? providers.default}
+            options={providers.options.map((option) => ({ label: option.label, value: option.id }))}
+            onValueChange={(next) => void save((current) => setSensorProvider(current, sensor.id, next))}
+            disabled={disabled}
+          />
+        ) : (
+          <SettingsRow label="Provider" hint="Choose this under This machine → Defaults for new projects.">
+            <Text style={{ color: theme.colors.foreground, fontSize: 14 }}>{selectedProvider?.label ?? "Unknown"}</Text>
+          </SettingsRow>
+        )
+      ) : null}
       {reads && sensor
         ? keyRows(
             { ...props, sensor },
@@ -155,4 +192,14 @@ export function JudgeRows(props: Props) {
       <Text style={{ color: theme.colors.foregroundMuted, fontSize: FONT.small, padding: SPACE.lg }}>{note}</Text>
     </Rows>
   );
+}
+
+function activeProviderId(
+  sensor: Sensor,
+  values: Layer,
+  machine: Layer,
+  providers?: ProviderCatalog,
+): string | undefined {
+  const chosen = values.sensor?.[sensor.id]?.provider ?? machine.sensor?.[sensor.id]?.provider ?? providers?.default;
+  return providers?.options.some((option) => option.id === chosen) ? chosen : providers?.default;
 }

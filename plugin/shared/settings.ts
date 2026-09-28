@@ -150,7 +150,11 @@ export const HitlChoice = z.strictObject({
 });
 
 /** A sensor's key buys paid calls, so it is kept on this machine only and the screen never reads it back: it sees KEPT. */
-const SensorChoice = z.strictObject({ key: z.string().min(1).optional() });
+const SensorChoice = z.strictObject({
+  provider: z.string().optional(),
+  key: z.string().min(1).optional(),
+  keyProvider: z.string().optional(),
+});
 
 export const KEPT = "kept, not shown";
 

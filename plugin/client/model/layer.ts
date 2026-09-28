@@ -87,10 +87,24 @@ export function setMcp(values: Layer, id: string, choice: McpChoice): Layer {
 }
 
 /** A sensor's key set, or with `null` forgotten; the server keeps any other key the values show as KEPT. */
-export function withKey(values: Layer, id: string, key: string | null): Layer {
-  const { [id]: _was, ...others } = values.sensor ?? {};
-  const sensor = key ? { ...others, [id]: { key } } : others;
+export function withKey(values: Layer, id: string, key: string | null, provider?: string): Layer {
+  const sensor = { ...values.sensor };
+  const entry = { ...sensor[id] };
+  if (key) {
+    entry.key = key;
+    if (provider) entry.keyProvider = provider;
+    else delete entry.keyProvider;
+  } else {
+    delete entry.key;
+    delete entry.keyProvider;
+  }
+  if (Object.keys(entry).length > 0) sensor[id] = entry;
+  else delete sensor[id];
   return { ...values, sensor: Object.keys(sensor).length > 0 ? sensor : undefined };
+}
+
+export function setSensorProvider(values: Layer, id: string, provider: string): Layer {
+  return { ...values, sensor: { ...values.sensor, [id]: { ...values.sensor?.[id], provider } } };
 }
 
 /** None goes back to the kit's sensor for review, which the watch's brains never switch off. */

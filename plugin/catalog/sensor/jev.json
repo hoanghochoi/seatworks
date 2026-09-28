@@ -11,5 +11,21 @@
     }
   },
   "timeoutSeconds": 5,
-  "retries": 1
+  "retries": 1,
+  "defaultProvider": "openrouter",
+  "providers": [
+    {
+      "id": "openrouter",
+      "label": "OpenRouter"
+    },
+    {
+      "id": "typesafe",
+      "label": "TypeSafe.ai",
+      "key": "TypeSafe API key",
+      "url": "https://api.typesafe.ai/v1/systemone",
+      "model": "jev-latest",
+      "terms": "Requests go directly to TypeSafe.ai.",
+      "body": {}
+    }
+  ]
 }
