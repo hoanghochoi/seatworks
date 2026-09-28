@@ -123,7 +123,7 @@ test("a seat whose harness reads its servers from a file gets that file and its 
     const { role, harness } = team.roles.peer!;
     const dir = seatDir(kit, role, harness, home, project);
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, harness.settings.file), own);
+    writeFileSync(join(dir, harness.settings!.file), own);
     const outside = join(tempDir("sw2-outside-"), "AGENTS.md");
     writeFileSync(outside, "project rules that must not change");
     symlinkSync(outside, join(dir, "AGENTS.md"));
@@ -131,7 +131,7 @@ test("a seat whose harness reads its servers from a file gets that file and its 
     const servers = serversFor(kit, team, "peer", context);
     assert.ok(materialize(kit, team, "peer", home, project, servers).length > 0, id);
     assert.deepEqual(
-      readConfig(join(dir, harness.settings.file), {}),
+      readConfig(join(dir, harness.settings!.file), {}),
       settings,
       `${id}: the kit's settings are the whole file`,
     );
@@ -141,7 +141,7 @@ test("a seat whose harness reads its servers from a file gets that file and its 
       `${id}: the block reaches a seat whatever copy it works in, even one made before the block was committed`,
     );
     assert.equal(readFileSync(outside, "utf-8"), "project rules that must not change", id);
-    const listed = readConfig<Record<string, Record<string, Server>>>(join(dir, harness.mcp.file), {})[
+    const listed = readConfig<Record<string, Record<string, Server>>>(join(dir, harness.mcp.file!), {})[
       harness.mcp.key!
     ];
     assert.deepEqual(Object.keys(listed ?? {}).sort(), ["docs", "ide", "team"], id);
@@ -238,7 +238,7 @@ test("an unreadable MCP file is written again when the plugin owns it, and left 
   assert.equal(peer.harness.mcp.delivery, "file", "the Peer's harness takes its servers from this file alone");
   const servers = { team: { type: "stdio", command: ["node", "team.mjs"] } };
   materialize(kit, team, "peer", home, project, servers);
-  const owned = join(seatDir(kit, peer.role, peer.harness, home, project), peer.harness.mcp.file);
+  const owned = join(seatDir(kit, peer.role, peer.harness, home, project), peer.harness.mcp.file!);
   writeFileSync(owned, '{ "mcpServers": {');
   materialize(kit, team, "peer", home, project, servers);
   assert.ok(
@@ -252,7 +252,7 @@ test("an unreadable MCP file is written again when the plugin owns it, and left 
 
   const lead = team.roles.lead!;
   materialize(kit, team, "lead", home, project);
-  const kept = join(seatDir(kit, lead.role, lead.harness, home, project), lead.harness.mcp.file);
+  const kept = join(seatDir(kit, lead.role, lead.harness, home, project), lead.harness.mcp.file!);
   const held = `{ "userID": "u-1", "oauthAccount": { "emailAddress": "owner@example.test" }, "projects": { "/work": {} },`;
   writeFileSync(kept, held);
   const changes = materialize(kit, team, "lead", home, project);
@@ -262,7 +262,7 @@ test("an unreadable MCP file is written again when the plugin owns it, and left 
     "left exactly as it was: the seed would wipe the account and history",
   );
   assert.equal(
-    changes.some((change) => change.includes(lead.harness.mcp.file)),
+    changes.some((change) => change.includes(lead.harness.mcp.file!)),
     false,
     "and not reported as a routine update",
   );

@@ -82,7 +82,7 @@ export function materialize(
   writeFiles(kit, seat.harness, seat.role, dir, record);
   linkShared(seat.harness, dir, homeDir, record);
   writeMcpFile(seat.harness, dir, servers, record);
-  writeInstructions(kit, team, roleName, dir, record, project?.root);
+  writeInstructions(kit, team, roleName, { dir, paths }, record, project?.root);
   linkSkills(kit, team, roleName, built, record);
   return record.changes;
 }

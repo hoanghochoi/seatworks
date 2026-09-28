@@ -15,6 +15,10 @@ export const HarnessFile = z
     configDirEnv: text,
     profileRoot: text,
     contextFile: text.optional(),
+    /** Written before everything else in `contextFile`, such as the header that makes it the agent's own profile. */
+    contextHead: text.optional(),
+    /** The agent takes no system prompt, so the role's prompt opens `contextFile` instead. */
+    promptInContext: z.boolean().optional(),
     skillsDir: text,
     /** `profile`: where a role's settings name a permission profile (`key`), each path is granted `value` in it (`at`). */
     stateWrites: z
@@ -41,13 +45,16 @@ export const HarnessFile = z
         unparsed: z.strictObject({ input: text, error: Pattern }).optional(),
       })
       .optional(),
-    settings: z.strictObject({
-      file: text,
-      source: text,
-      roleSource: text,
-      inherits: z.strictObject({ from: text, keys: texts }).optional(),
-      overlayEnv: text.optional(),
-    }),
+    /** An agent with no settings file of a seat's own has none; every role then sits on it. */
+    settings: z
+      .strictObject({
+        file: text,
+        source: text,
+        roleSource: text,
+        inherits: z.strictObject({ from: text, keys: texts }).optional(),
+        overlayEnv: text.optional(),
+      })
+      .optional(),
     links: z.array(z.strictObject({ link: text, target: text, optional: z.boolean().optional() })).optional(),
     files: z.record(z.string(), z.array(z.string()).min(1)).optional(),
     /**
@@ -82,7 +89,7 @@ export const HarnessFile = z
     /** An agent that keeps its login per settings folder: how a new seat's folder answers whether it is logged in. */
     login: z.strictObject({ run: z.array(z.string()).min(1), field: text, help: text }).optional(),
     mcp: z.strictObject({
-      file: text,
+      file: text.optional(),
       delivery: z.enum(["launch", "file"]),
       preapprove: z.boolean().optional(),
       transports: z.array(McpTransport).min(1),
@@ -107,6 +114,14 @@ export const HarnessFile = z
   .refine((harness) => harness.mcp.delivery !== "file" || harness.mcp.key, {
     error: "delivers MCP servers in a file but names no key",
     path: ["mcp", "key"],
+  })
+  .refine((harness) => harness.mcp.delivery !== "file" || harness.mcp.file, {
+    error: "delivers MCP servers in a file but names no file",
+    path: ["mcp", "file"],
+  })
+  .refine((harness) => !harness.promptInContext || harness.contextFile, {
+    error: "puts the role's prompt in its context file but names no context file",
+    path: ["promptInContext"],
   })
   .refine(
     (harness) => {

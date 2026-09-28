@@ -7,11 +7,12 @@ import { LeftAlone, ensureLink, isLink, present, writeIfChanged } from "../../co
 import { type Json, getPath, isRecord, layered, sameJson, setPath } from "../../core/json.ts";
 import { daemonLog } from "../../core/logger.ts";
 import { expandHome } from "../../core/paths.ts";
-import { projectBlock, skillProblems, skillSources } from "../kit/content.ts";
+import { type PromptPaths, projectBlock, skillProblems, skillSources } from "../kit/content.ts";
 import type { HarnessSpec, Kit, McpServers, RoleSpec } from "../kit/kit.ts";
 import { harnessFileSources, roleSettingsFile } from "../kit/harness-files.ts";
 import { projectImports, stateWrites } from "./launch.ts";
 import { refusalLines, refusalSettings } from "./refusals.ts";
+import { seatPrompt } from "./seat-prompt.ts";
 import { snapshot } from "./snapshots.ts";
 import { type Team, skillDirsFor } from "../team/team.ts";
 
@@ -59,7 +60,7 @@ export function seedRecords(kit: Kit, state: string): string[] {
 
 /** The keys a harness takes from the owner's own config: which model providers exist is theirs to say, not the kit's. */
 function inherited(harness: HarnessSpec, homeDir: string): Json {
-  const inherits = harness.settings.inherits;
+  const inherits = harness.settings?.inherits;
   if (!inherits) return {};
   const path = expandHome(inherits.from, homeDir);
   const fault = configFault(path);
@@ -76,8 +77,9 @@ export function writeRoleSettings(
   record: Recorder,
   catalog: Json,
 ): void {
-  const { file, source } = harness.settings;
   const roleFile = roleSettingsFile(kit, harness, role);
+  if (!harness.settings || !roleFile) return;
+  const { file, source } = harness.settings;
   if (!existsSync(roleFile)) throw new Error(`${role.role}: ${roleFile} is missing`);
   // Read strictly: a role's settings stood in as empty would seat it without its sandbox and its denials.
   const kitSettings = layered(
@@ -195,6 +197,7 @@ function clearMcp(harness: HarnessSpec, current: Json): Json {
 }
 
 export function writeMcpFile(harness: HarnessSpec, dir: string, servers: McpServers, record: Recorder): void {
+  if (!harness.mcp.file) return;
   const file = join(dir, harness.mcp.file);
   const fault = configFault(file);
   // A launch-delivery harness keeps its own account data in this file; a file-delivery one holds only the seat's two tools here.
@@ -211,21 +214,29 @@ export function writeMcpFile(harness: HarnessSpec, dir: string, servers: McpServ
 }
 
 /**
- * The seat's own instructions file: the kit's block for the project, which a copy made before the block was committed
- * lacks, then what it takes in of the project's own instructions its agent misses.
+ * The seat's own instructions file: its harness's head and, for an agent that takes no system prompt, the role's prompt;
+ * then the kit's block for the project, which a copy made before the block was committed lacks, and what it takes in of
+ * the project's own instructions its agent misses.
  */
 export function writeInstructions(
   kit: Kit,
   team: Team,
   roleName: string,
-  dir: string,
+  seat: { dir: string; paths: PromptPaths },
   record: Recorder,
   root?: string,
 ): void {
-  const { harness } = team.roles[roleName]!;
+  const { harness, role } = team.roles[roleName]!;
   if (!harness.contextFile) return;
-  const text = [projectBlock(kit).trim(), projectImports(harness, root).trim()].filter(Boolean).join("\n\n");
-  const contextPath = join(dir, harness.contextFile);
+  const text = [
+    harness.contextHead?.trim(),
+    harness.promptInContext ? seatPrompt(kit, team, role, harness.id, seat.paths) : "",
+    projectBlock(kit).trim(),
+    projectImports(harness, root).trim(),
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  const contextPath = join(seat.dir, harness.contextFile);
   if (text) record.note(writeIfChanged(contextPath, `${text}\n`), harness.contextFile);
   else removeIfPresent(contextPath, harness.contextFile, record);
 }

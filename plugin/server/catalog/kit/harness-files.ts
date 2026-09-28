@@ -9,8 +9,8 @@ export function harnessFile(kit: Kit, harness: string, source: string, role: Rol
   return ownOrShipped(kit.own && join(kit.own, path), join(kit.dir, path));
 }
 
-export function roleSettingsFile(kit: Kit, harness: HarnessSpec, role: RoleSpec): string {
-  return harnessFile(kit, harness.id, harness.settings.roleSource, role);
+export function roleSettingsFile(kit: Kit, harness: HarnessSpec, role: RoleSpec): string | undefined {
+  return harness.settings && harnessFile(kit, harness.id, harness.settings.roleSource, role);
 }
 
 export function harnessFileSources(kit: Kit, harness: HarnessSpec, role: RoleSpec): Record<string, string[]> {
@@ -23,8 +23,9 @@ export function harnessFileSources(kit: Kit, harness: HarnessSpec, role: RoleSpe
 }
 
 export function supportsRole(kit: Kit, harness: HarnessSpec, role: RoleSpec): boolean {
+  const settings = roleSettingsFile(kit, harness, role);
   return (
-    existsSync(roleSettingsFile(kit, harness, role)) &&
+    (settings === undefined || existsSync(settings)) &&
     Object.values(harnessFileSources(kit, harness, role)).every((sources) =>
       sources.every((source) => existsSync(source)),
     )

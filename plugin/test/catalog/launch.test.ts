@@ -190,7 +190,7 @@ test("a Claude seat's file tools are kept off what the desk owns and what sets u
   materialize(real, resolveTeam(real), "peer", homeDir, shop);
   const deny =
     readConfig<{ permissions?: { deny?: string[] } }>(
-      join(seatDir(real, seat.role, seat.harness, homeDir, shop), seat.harness.settings.file),
+      join(seatDir(real, seat.role, seat.harness, homeDir, shop), seat.harness.settings!.file),
       {},
     ).permissions?.deny ?? [];
   const denied = (tool: string, path: string) =>
@@ -222,10 +222,11 @@ test("a Claude seat's file tools are kept off what the desk owns and what sets u
       ),
     ],
     [
-      "another seat's settings, which hold that seat's own denials",
+      "another seat's settings, which hold that seat's own denials, or its prompt where its agent takes none",
       "Edit",
       Object.values(real.harnesses).map(
-        (harness) => `${home(harness.profileRoot)}/sw2-supervisor-${harness.id}-shop-1a2b/${harness.settings.file}`,
+        (harness) =>
+          `${home(harness.profileRoot)}/sw2-supervisor-${harness.id}-shop-1a2b/${harness.settings?.file ?? harness.contextFile}`,
       ),
     ],
     [

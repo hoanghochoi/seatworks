@@ -39,7 +39,8 @@ export class Seating {
     // And a login made after the seat was built is a link the seat does not have yet.
     const linked = (link: { link: string; target: string }) =>
       !existsSync(expandHome(link.target)) || existsSync(join(dir!, link.link));
-    const built = dir ? existsSync(join(dir, harness.settings.file)) && (harness.links ?? []).every(linked) : false;
+    const marker = harness.settings?.file ?? harness.contextFile;
+    const built = dir ? existsSync(marker ? join(dir, marker) : dir) && (harness.links ?? []).every(linked) : false;
     if (this.built.has(key) && built) return team;
     try {
       const changes = materialize(this.kit, team, roleName, home(), project, this.servers(team, roleName));

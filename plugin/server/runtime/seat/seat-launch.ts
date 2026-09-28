@@ -1,10 +1,9 @@
-import { renderPrompt, renderText } from "../../catalog/kit/content.ts";
-import { rulesFor } from "../../catalog/team/team.ts";
 import { type Kit, type RoleSpec, SEAT_KEY } from "../../catalog/kit/kit.ts";
 import { seatOf } from "../../catalog/kit/roles.ts";
 import { applyRole, seatEnv } from "../../catalog/seat/launch.ts";
 import { seatBin } from "../../catalog/seat/seat-bin.ts";
 import { seedRecords } from "../../catalog/seat/seat-files.ts";
+import { seatPrompt } from "../../catalog/seat/seat-prompt.ts";
 import { seatDir } from "../../catalog/seat/seats.ts";
 import { daemonLog } from "../../core/logger.ts";
 import { guidesDir, home } from "../../core/paths.ts";
@@ -35,12 +34,7 @@ export class SeatLaunch {
     this.remember(project);
     const team = this.seating.ensure(seat.role.role, seat.harness, project);
     const paths = { guides: guidesDir(), state: project.state };
-    // The role's prompt, then what this seat is told of its servers and the Human's rules.
-    const render = (role: RoleSpec) =>
-      [renderPrompt(this.kit, role, seat.harness.id, paths), renderText(role, rulesFor(team, role.role), paths)]
-        .map((part) => part.trimEnd())
-        .filter(Boolean)
-        .join("\n\n");
+    const render = (role: RoleSpec) => seatPrompt(this.kit, team, role, seat.harness.id, paths);
     const key = seat.role.tools ? this.keys.issue() : undefined;
     const servers = this.seating.servers(team, seat.role.role, key);
     const applied = applyRole(this.kit, team, config, render, project.state, servers);

@@ -109,7 +109,7 @@ test("every role builds on every agent the kit ships, each in that agent's own t
       serversFor(kit, team, role.role, { node: "/bin/node", socket: "/desk.sock" }),
     );
     const dir = seatDir(kit, role, harness, home, project);
-    const settings = readConfig<unknown>(join(dir, harness.settings.file), {});
+    const settings = harness.settings ? readConfig<unknown>(join(dir, harness.settings.file), {}) : {};
     if (harness.id === "claude") {
       assert.equal(
         at(settings, "language"),
@@ -350,7 +350,7 @@ test("every role builds on every agent the kit ships, each in that agent's own t
       const env = seatEnv(kit, request, dir, project).env;
       assert.equal(
         env.PI_CONFIG_FILES,
-        join(dir, harness.settings.file),
+        join(dir, harness.settings!.file),
         `${where}: its settings overlay a repository's own .omp/config.yml, which would outrank them`,
       );
       assert.ok(
@@ -365,7 +365,7 @@ test("every role builds on every agent the kit ships, each in that agent's own t
         `${where}: edits files only where the role may`,
       );
       assert.ok(disabled.includes("claude"), `${where}: the owner's own Claude setup does not load in a seat`);
-      const servers = (at(readConfig<unknown>(join(dir, harness.mcp.file), {}), "mcpServers") ?? {}) as Record<
+      const servers = (at(readConfig<unknown>(join(dir, harness.mcp.file!), {}), "mcpServers") ?? {}) as Record<
         string,
         unknown
       >;
@@ -420,6 +420,24 @@ test("every role builds on every agent the kit ships, each in that agent's own t
         for (const tool of [...BUILT_INS.opencode!, "bash"])
           assert.ok(tool === "bash" ? bash["*"] === "deny" : denies(tool), `${where}: has no ${tool}`);
     }
+    if (harness.id === "agy") {
+      const profile = readFileSync(join(dir, harness.contextFile!), "utf-8");
+      assert.ok(
+        profile.startsWith(`${harness.contextHead!}\n\n`),
+        `${where}: opens with the header agy finds its agent by`,
+      );
+      assert.ok(
+        harness.provider.env?.AGY_EXTRA_ARGS?.includes("--agent seat") && harness.contextHead!.includes("name: seat"),
+        `${where}: runs as the agent its profile names`,
+      );
+      const opening = readFileSync(join(PLUGIN, "content", role.prompt), "utf-8")
+        .split("\n")
+        .find((line) => line.trim())!;
+      assert.ok(
+        profile.includes(opening),
+        `${where}: Paseo hands an ACP agent no system prompt, so the role's prompt is the profile agy runs as`,
+      );
+    }
     if (harness.id === "pi") {
       assert.deepEqual(
         at(settings, "packages"),
@@ -438,7 +456,7 @@ test("every role builds on every agent the kit ships, each in that agent's own t
         watcher: [],
       }[as as "reviewer"];
       assert.deepEqual(at(settings, "defaultTools"), tools, where);
-      const desk = at(readConfig<unknown>(join(dir, harness.mcp.file), {}), "mcpServers.team");
+      const desk = at(readConfig<unknown>(join(dir, harness.mcp.file!), {}), "mcpServers.team");
       if (!role.tools)
         assert.equal(desk, undefined, `${where}: a role given no desk tools is not connected to the desk`);
       else {

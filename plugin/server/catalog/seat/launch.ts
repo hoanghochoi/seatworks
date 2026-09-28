@@ -128,7 +128,7 @@ export function seatEnv(
       ...request.env,
       ...seat.harness.provider.env,
       [seat.harness.configDirEnv]: seatPath,
-      ...(seat.harness.settings.overlayEnv
+      ...(seat.harness.settings?.overlayEnv
         ? { [seat.harness.settings.overlayEnv]: join(seatPath, seat.harness.settings.file) }
         : {}),
       TMPDIR: request.env.TMPDIR ?? tmpdir(),

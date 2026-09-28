@@ -1,0 +1,25 @@
+{
+  "id": "agy",
+  "label": "Antigravity",
+  "baseProvider": "agy",
+  "profileRoot": "HOME/.agy/seats",
+  "configDirEnv": "AGY_ADD_DIR",
+  "contextFile": ".agents/agents/seat.md",
+  "contextHead": "---\nname: seat\ndescription: The role this agent holds on the team.\nmainAgent: true\nsubagent: false\n---",
+  "promptInContext": true,
+  "skillsDir": ".agents/skills",
+  "mcp": {
+    "delivery": "launch",
+    "transports": [
+      "stdio",
+      "http"
+    ]
+  },
+  "provider": {
+    "env": {
+      "SEATWORKS_HARNESS": "agy",
+      "SEATWORKS_AGENT_BIN": "agy",
+      "AGY_EXTRA_ARGS": "--dangerously-skip-permissions --agent seat"
+    }
+  }
+}
