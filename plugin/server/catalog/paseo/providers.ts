@@ -25,13 +25,27 @@ export function seatPairs(kit: Kit): { role: RoleSpec; harness: HarnessSpec }[] 
   return pairs;
 }
 
-/** A seat's provider as the kit wants it, starting on the model its team chose. */
-export function desiredProvider(kit: Kit, seat: RoleSeat): Json {
+/**
+ * Paseo lets a provider extend only an agent of its own or `acp`, so a seat on a provider the owner set up takes what
+ * that one extends, runs and is given.
+ */
+function baseOf(
+  held: DaemonConfig["providers"],
+  harness: HarnessSpec,
+): { extends: string; command?: unknown; env: Json } {
+  const own = held?.[harness.baseProvider];
+  if (!own || typeof own.extends !== "string") return { extends: harness.baseProvider, env: {} };
+  return { extends: own.extends, command: own.command, env: isRecord(own.env) ? own.env : {} };
+}
+
+/** A seat's provider as the kit wants it over the providers Paseo holds, starting on the model its team chose. */
+export function desiredProvider(kit: Kit, seat: RoleSeat, held: DaemonConfig["providers"] = {}): Json {
   const { role, harness, model } = seat;
+  const base = baseOf(held, harness);
   const entry: Json = {
-    extends: harness.baseProvider,
+    extends: base.extends,
     label: labelFor(kit, role, harness),
-    env: { ...(harness.provider.env ?? {}), SEATWORKS_ROLE: role.role, SEATWORKS_KIT: kit.dir },
+    env: { ...base.env, ...(harness.provider.env ?? {}), SEATWORKS_ROLE: role.role, SEATWORKS_KIT: kit.dir },
   };
   if (role.description) entry.description = role.description;
   // NODE is the daemon's own node, which runs the kit's scripts alike on every platform.
@@ -39,6 +53,7 @@ export function desiredProvider(kit: Kit, seat: RoleSeat): Json {
     part === "NODE" ? nodeBin() : part.replaceAll("KIT", kit.dir),
   );
   if (command.length > 0) entry.command = command;
+  else if (base.command !== undefined) entry.command = base.command;
   if (model) entry.additionalModels = [{ id: model.id, label: model.label, isDefault: true }];
   const tools = paseoToolsPolicy(kit, role);
   if (tools) entry.paseoTools = tools;
@@ -46,12 +61,12 @@ export function desiredProvider(kit: Kit, seat: RoleSeat): Json {
 }
 
 /** One provider per role and the agent it has in each team, as the first team to seat it wants it. */
-function wantedProviders(kit: Kit, teams: Team[]): Map<string, Json> {
+function wantedProviders(kit: Kit, teams: Team[], held: DaemonConfig["providers"]): Map<string, Json> {
   const wanted = new Map<string, Json>();
   for (const team of teams)
     for (const seat of Object.values(team.roles)) {
       const id = providerId(kit, seat.role.role, seat.harness.id);
-      if (!wanted.has(id)) wanted.set(id, desiredProvider(kit, seat));
+      if (!wanted.has(id)) wanted.set(id, desiredProvider(kit, seat, held));
     }
   return wanted;
 }
@@ -94,8 +109,8 @@ export function providerPatches(
   teams: Team[],
   keep: Set<string> = new Set(),
 ): { patches: ConfigPatch[]; changed: string[]; stale: string[] } {
-  const wanted = wantedProviders(kit, teams);
   const held = config.providers ?? {};
+  const wanted = wantedProviders(kit, teams, held);
   const changed: string[] = [];
   const ours = (id: unknown): id is string =>
     Boolean(kit.prefix) && typeof id === "string" && id.startsWith(kit.prefix);
@@ -123,6 +138,7 @@ export function providerPatches(
       ...(removed.length > 0 ? { removeProviders: removed } : {}),
       ...(dropping ? { agentProfiles: kept } : {}),
     });
-  if (Object.keys(providers).length > 0) patches.push({ providers });
+  // One provider a patch: Paseo refuses a whole patch for one provider it cannot hold, such as one on an agent it lacks.
+  for (const [id, next] of Object.entries(providers)) patches.push({ providers: { [id]: next } });
   return { patches, changed, stale };
 }

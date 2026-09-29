@@ -9,6 +9,7 @@ import { stateRoot } from "../../server/core/paths.ts";
 import { emptyLedger } from "../../server/domain/ledger.ts";
 import { contracts } from "../../shared/rpc.ts";
 import type { Layer } from "../../shared/settings.ts";
+import { reported } from "../console.ts";
 import { tempDir } from "../tempdir.ts";
 import { fakeConfig } from "./fake-paseo.ts";
 import { daemon, served, which } from "./served.ts";
@@ -249,6 +250,16 @@ test("Paseo holds a provider for each role and agent an attached project's team 
     false,
     "and no patch touches them",
   );
+});
+
+test("a role seated on an agent Paseo does not have leaves every other role's provider set up, and the daemon's log names the one refused", async (t) => {
+  const said = reported(t);
+  const { call, providers } = served(daemon(fakeConfig({}, new Set(["claude"]))));
+  const root = realpathSync(tempDir("sw2-rpc-missing-agent-"));
+  git(root, "init", "-q");
+  which(await call(contracts.projectsAdd, { root }), "slug");
+  assert.deepEqual(Object.keys(await providers()).sort(), ["sw2-lead-claude", "sw2-supervisor-claude"]);
+  assert.match(said(), /Paseo refused provider sw2-peer-omp:[^\n]*extends unknown provider "omp"/);
 });
 
 test("while Paseo cannot say which seats are live, a provider the team no longer seats stays, since a seat may still run on it", async () => {

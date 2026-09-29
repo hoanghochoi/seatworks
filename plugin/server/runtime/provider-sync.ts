@@ -61,8 +61,18 @@ export class ProviderSync {
       const teams = registry.known().map((project) => source.teamFor(project));
       let plan = providerPatches(held, kit, teams);
       if (plan.stale.length > 0) plan = providerPatches(held, kit, teams, await this.inUse(plan.stale));
-      for (const patch of plan.patches) await config.patch(patch);
-      if (plan.changed.length > 0) daemonLog.info(`Paseo's providers updated: ${plan.changed.join(", ")}`);
+      const refused = new Set<string>();
+      for (const patch of plan.patches) {
+        try {
+          await config.patch(patch);
+        } catch (error) {
+          const ids = Object.keys(patch.providers ?? {});
+          for (const id of ids) refused.add(id);
+          daemonLog.error(`Paseo refused ${ids.length > 0 ? `provider ${ids.join(", ")}` : "a change"}:`, error);
+        }
+      }
+      const updated = plan.changed.filter((line) => !refused.has(line.split(" ")[1]!));
+      if (updated.length > 0) daemonLog.info(`Paseo's providers updated: ${updated.join(", ")}`);
     } catch (error) {
       daemonLog.error("could not bring Paseo's providers in step with the teams:", error);
     }

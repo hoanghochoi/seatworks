@@ -51,11 +51,13 @@ function deepMerge(held: Record<string, unknown>, change: Record<string, unknown
 /**
  * Paseo's config API as the daemon keeps the config in memory (daemon-config-store.js, provider-registry.js): a patch
  * merges in at every depth, the providers it removes go after that merge, the profile list is replaced whole, and a
- * provider of no built-in agent that names none to extend refuses the whole patch.
+ * provider of no built-in agent that extends none, or anything but a built-in agent or `acp`, refuses the whole patch.
  */
-export function fakeConfig(initial: DaemonConfig = {}) {
+export function fakeConfig(
+  initial: DaemonConfig = {},
+  builtIn = new Set(["claude", "codex", "copilot", "opencode", "pi", "omp"]),
+) {
   let held: Held = structuredClone({ providers: {}, ...initial });
-  const builtIn = new Set(["claude", "codex", "copilot", "opencode", "pi", "omp"]);
   const patches: ConfigPatch[] = [];
   const api = {
     async get() {
@@ -66,8 +68,13 @@ export function fakeConfig(initial: DaemonConfig = {}) {
       const { removeProviders = [], ...rest } = change;
       const next = structuredClone(deepMerge(held, rest)) as Held;
       for (const id of removeProviders) delete next.providers[id];
-      for (const [id, provider] of Object.entries(next.providers))
-        if (!builtIn.has(id) && !provider.extends) throw new Error(`Custom provider '${id}' requires an extends value`);
+      for (const [id, provider] of Object.entries(next.providers)) {
+        if (builtIn.has(id)) continue;
+        if (!provider.extends) throw new Error(`Custom provider '${id}' requires an extends value`);
+        const base = provider.extends as string;
+        if (!builtIn.has(base) && base !== "acp")
+          throw new Error(`Provider "${id}" extends unknown provider "${base}".`);
+      }
       held = next;
       return { requestId: "patch", config: structuredClone(held) };
     },

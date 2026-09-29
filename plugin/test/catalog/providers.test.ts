@@ -167,3 +167,18 @@ test("an attached project's team gets one provider per role, on the agent that r
     "a role on an agent its preset does not name starts on another role's preset there, not the first listed",
   );
 });
+
+test("a seat on an agent the owner set up in Paseo runs as that agent does, since Paseo lets a provider extend only its own agents or acp", async () => {
+  const kit = makeKit();
+  const own = { extends: "acp", label: "Mine", command: ["own-acp"], env: { OWN: "1" } };
+  const config = fakeConfig({ providers: { omp: own } }, new Set(["claude"]));
+  await pass(config, kit, [resolveTeam(kit)]);
+  assert.deepEqual(ours(config), ["sw2-lead-claude", "sw2-peer-omp", "sw2-scribe-omp", "sw2-supervisor-claude"]);
+  const peer = providers(config)["sw2-peer-omp"]!;
+  assert.deepEqual(
+    [peer.extends, peer.command, peer.env?.OWN, peer.env?.SEATWORKS_ROLE],
+    ["acp", ["own-acp"], "1", "peer"],
+  );
+  assert.equal(providers(config)["sw2-lead-claude"]!.extends, "claude");
+  assert.deepEqual(providers(config).omp, own, "the owner's own stays as it was");
+});
