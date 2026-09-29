@@ -206,7 +206,7 @@ test("every role builds on every agent the kit ships, each in that agent's own t
         false,
         `${where}: only the role's skills, as on every other agent`,
       );
-      assert.equal(at(settings, "sandbox_mode"), as === "watcher" ? "read-only" : "workspace-write", where);
+      assert.equal(at(settings, "sandbox_mode"), as === "watcher" ? "read-only" : "danger-full-access", where);
       assert.equal(
         at(settings, "web_search") === "disabled",
         !searches,
