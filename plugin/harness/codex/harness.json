@@ -31,7 +31,8 @@
       "from": "HOME/.codex/config.toml",
       "keys": [
         "model_provider",
-        "model_providers"
+        "model_providers",
+        "windows"
       ]
     }
   },

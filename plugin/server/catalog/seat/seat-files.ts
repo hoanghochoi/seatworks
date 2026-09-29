@@ -58,7 +58,7 @@ export function seedRecords(kit: Kit, state: string): string[] {
   return seeded;
 }
 
-/** The keys a harness takes from the owner's own config: which model providers exist is theirs to say, not the kit's. */
+/** The keys a harness takes from the owner's own config: which model providers exist, and how this machine sandboxes, are theirs to say. */
 function inherited(harness: HarnessSpec, homeDir: string): Json {
   const inherits = harness.settings?.inherits;
   if (!inherits) return {};
