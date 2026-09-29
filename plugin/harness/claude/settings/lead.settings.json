@@ -21,8 +21,6 @@
     ]
   },
   "sandbox": {
-    "network": {
-      "allowLocalBinding": true
-    }
+    "enabled": false
   }
 }

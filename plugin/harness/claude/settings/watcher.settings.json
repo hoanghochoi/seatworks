@@ -20,5 +20,8 @@
       "TaskUpdate",
       "AskUserQuestion"
     ]
+  },
+  "sandbox": {
+    "enabled": false
   }
 }
