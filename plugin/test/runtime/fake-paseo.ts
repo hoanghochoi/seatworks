@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import type { ConfigPatch, DaemonConfig } from "../../server/core/ports.ts";
 import { FakeTimeline } from "./fake-timeline.ts";
 
@@ -229,13 +230,14 @@ export function fakePaseo() {
     workspaces: {
       // The daemon finds the folder's oldest live workspace, or makes one (open_project_request).
       async open(cwd: string) {
-        const found = [...workspaces].find(([id, path]) => path === cwd && !archivedWorkspaces.has(id));
+        const found = [...workspaces].find(([id, path]) => path === resolve(cwd) && !archivedWorkspaces.has(id));
         return found ? workspace(found[0]) : paseo.workspaces.create({ source: { path: cwd } });
       },
-      // The daemon files a directory under the given project, or makes one of the directory when given none.
+      // The daemon files a directory under the given project, or makes one of the directory when given none; it keeps
+      // the directory as the platform spells it, so on Windows a path given with / comes back with \.
       async create({ title, source }: { title?: string; source: { path: string; projectId?: string } }) {
         const id = `ws-${workspaces.size + 1}`;
-        workspaces.set(id, source.path);
+        workspaces.set(id, resolve(source.path));
         workspaceProjects.set(id, source.projectId ?? `prj:${source.path}`);
         if (title) workspaceNames.set(id, title);
         return workspace(id);

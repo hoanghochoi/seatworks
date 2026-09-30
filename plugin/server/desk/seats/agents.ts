@@ -1,5 +1,6 @@
 import type { RoleSpec } from "../../catalog/kit/kit.ts";
 import { providerId } from "../../catalog/kit/roles.ts";
+import { samePath } from "../../core/fs.ts";
 import { contains, dropMerged } from "../../core/git.ts";
 import type { SeatLook, SeatSpec, Workspaces } from "../../core/ports.ts";
 import type { DeskBase } from "../base.ts";
@@ -104,7 +105,7 @@ export class Agents {
       labels: { ...this.marks(role, project), ...options.labels },
     });
     const actual = started.cwd;
-    if (actual && actual !== slot.path) {
+    if (actual && !samePath(actual, slot.path)) {
       await this.roster.archive(started.id, true);
       throw new Error(`the agent was placed in ${actual} instead of ${slot.path}`);
     }

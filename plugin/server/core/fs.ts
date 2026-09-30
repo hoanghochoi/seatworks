@@ -6,12 +6,13 @@ import {
   readdirSync,
   readFileSync,
   readlinkSync,
+  realpathSync,
   statSync,
   symlinkSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { dirname, isAbsolute, join, relative, sep } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 /** Something that is not a link stands where one should go: it is left alone, since deleting it would lose what it holds. */
 export class LeftAlone extends Error {}
@@ -20,6 +21,22 @@ export class LeftAlone extends Error {}
 export function firstUnder(root: string, path: string): string | undefined {
   const rest = relative(root, path);
   return rest && rest !== ".." && !rest.startsWith(`..${sep}`) && !isAbsolute(rest) ? rest.split(sep)[0] : undefined;
+}
+
+/** The one spelling of a folder: absolute, through its links and junctions, and on Windows without regard to case. */
+function canonical(path: string): string {
+  let real = resolve(path);
+  try {
+    real = realpathSync.native(real);
+  } catch {
+    // A path that is not there yet has no links to follow: its resolved spelling is all it has.
+  }
+  return process.platform === "win32" ? real.toLowerCase() : real;
+}
+
+/** Whether two spellings name one folder, whichever separators, case or trailing separator each was written with. */
+export function samePath(a: string, b: string): boolean {
+  return canonical(a) === canonical(b);
 }
 
 export function isLink(path: string): boolean {
