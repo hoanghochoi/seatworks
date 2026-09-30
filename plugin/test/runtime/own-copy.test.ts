@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { test } from "node:test";
 import { loadConfig } from "../../server/desk/project/project.ts";
 import type { DeskServices } from "../../server/desk/services.ts";
@@ -24,7 +24,7 @@ test("a lane works in the project's own copy from open to landing, and hands it 
   const lane = h.ledger().lanes.L1!;
   const lead = lane.lead!;
   assert.deepEqual(Object.keys(h.ledger().slots), []);
-  assert.equal(h.agents.get(lead)!.cwd, root);
+  assert.equal(h.agents.get(lead)!.cwd, resolve(root), "in the project's own checkout, as Paseo spells it");
   assert.equal(branch(), lane.branch);
   assert.deepEqual(
     ideCalls.filter((call) => call.path === root),
@@ -42,7 +42,7 @@ test("a lane works in the project's own copy from open to landing, and hands it 
   assert.equal(unbounded.ok, true, `limits the goal does not hold are the Lead's to give or not: ${unbounded.text}`);
   const first = h.ledger().tasks["L1-T1"]!;
   assert.deepEqual(first.outOfScope, []);
-  assert.equal(h.agents.get(first.peer!)!.cwd, root);
+  assert.equal(h.agents.get(first.peer!)!.cwd, resolve(root));
   assert.match(first.branch!, /^task\/l1-t1-/);
   assert.equal(branch(), first.branch);
   const blocked = await h.call(lead, "lead", "add_tasks", work("More", "a.txt"));
@@ -319,7 +319,7 @@ test("a lane carrying on the Human's branch is refused where there is none, star
     "fix/login",
     "main",
   ]);
-  assert.equal(h.agents.get(lane.lead!)!.cwd, h.project.root);
+  assert.equal(h.agents.get(lane.lead!)!.cwd, resolve(h.project.root));
   assert.match(
     h.agents.get(lane.lead!)!.prompt ?? "",
     /fix\/login, the Human's own[\s\S]*have the first task working there commit it as found, in a commit of its own/,

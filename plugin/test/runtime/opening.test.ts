@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { chmodSync, existsSync, readFileSync, writeFileSync } from "node:fs";
-import { delimiter, join } from "node:path";
+import { delimiter, join, resolve } from "node:path";
 import { test } from "node:test";
 import { tempDir } from "../tempdir.ts";
 import { harness } from "./harness.ts";
@@ -333,7 +333,7 @@ test("a detour gets a Lead and a copy of its own without asking, and the lane it
   assert.equal(detour.ok, true, detour.text);
   const cleared = h.ledger().lanes.L2!;
   assert.equal(cleared.detourOf, "L1");
-  assert.notEqual(h.agents.get(cleared.lead!)!.cwd, h.root);
+  assert.notEqual(h.agents.get(cleared.lead!)!.cwd, resolve(h.root));
   assert.match(h.agents.get(cleared.lead!)!.prompt!, /clears the way for L1/);
   h.commit(cleared.worktree!, "money.ts", "export type Money = bigint;\n");
   assert.equal((await h.call(sup, "supervisor", "land_lane", { lane: "L2" })).ok, true);

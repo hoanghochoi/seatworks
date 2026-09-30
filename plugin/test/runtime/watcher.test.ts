@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { test } from "node:test";
 import { stateRoot } from "../../server/core/paths.ts";
 import { settle } from "./fake-timeline.ts";
@@ -78,7 +78,7 @@ test("the Watcher's life: seated for a case, answering by the rules, kept while 
   const [watcher] = watchersOf(h);
   assert.equal(watcher!.title, "Case reader", "titled as its role is named");
   assert.equal(watcher!.labels["paseo.parent-agent-id"], sup, "under the Supervisor, so Paseo never pushes its reply");
-  assert.equal(watcher!.cwd, h.project.root);
+  assert.equal(watcher!.cwd, resolve(h.project.root));
   assert.match(
     watcher!.prompt!,
     /^CASE C\w+ about L1-T1: questions on the fields below\.\n\nseat:\nthe Peer on L1-T1 \(Clean build\)\n\ngoal:\ng\n[^]*items:\n- \[thought\] The parser is missing, so I'll build a stub for it\.\n\nfacts:\n- desk-unreached\n\nQuestions:\nstruggling: [^\n]+\n {3}yes: [^\n]+\n {3}no: [^\n]+\n[^]*\n\nNext: judge C\w+: /,

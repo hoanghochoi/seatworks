@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { resolve } from "node:path";
 import { mock, test } from "node:test";
 import { harness, heldCreate, laneWithPeer } from "./harness.ts";
 
@@ -106,7 +107,7 @@ test("a lane whose Lead is gone gets one where it stands, with the asks that wai
   assert.notEqual(now.lead, lane.lead);
   assert.notEqual(now.lead, peer);
   const seated = h.agents.get(now.lead!)!;
-  assert.equal(seated.cwd, lane.worktree);
+  assert.equal(seated.cwd, resolve(lane.worktree!));
   assert.match(
     seated.prompt ?? "",
     new RegExp(`^You take over L1 from its Lead ${lane.lead}, which is gone\\.[^]*SUPERVISOR DIRECTIVE L1: Build`),
