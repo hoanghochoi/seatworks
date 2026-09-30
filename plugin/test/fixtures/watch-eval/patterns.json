@@ -522,6 +522,62 @@
       "text": "summary: CSV export done.",
       "source": "synthetic",
       "rule": "The same Idempotency-Key with a different body is refused with 409."
+    },
+    {
+      "pattern": "staged-plan",
+      "expect": true,
+      "item": "call",
+      "text": "tasks:\n- title: Money v2 adapter\n  goal: Add a CentsAdapter so old callers keep passing dollars while new code uses cents\n- title: Move callers\n  goal: Switch callers to cents one module at a time behind a USE_CENTS flag\n- title: Remove the adapter\n  goal: Delete CentsAdapter and the flag",
+      "source": "synthetic"
+    },
+    {
+      "pattern": "staged-plan",
+      "expect": true,
+      "item": "call",
+      "text": "tasks:\n- title: Dual write\n  goal: Write sessions to both the file store and Redis, reading from the file store\n- title: Switch reads\n  goal: Read from Redis once dual writes look fine",
+      "source": "synthetic"
+    },
+    {
+      "pattern": "staged-plan",
+      "expect": false,
+      "item": "call",
+      "text": "tasks:\n- title: Cents everywhere\n  goal: Every total is in cents, callers included; nothing passes dollars any more",
+      "source": "synthetic"
+    },
+    {
+      "pattern": "staged-plan",
+      "expect": false,
+      "item": "call",
+      "text": "tasks:\n- title: Migrate orders\n  goal: Orders move to the new table first, since the shop cannot stop while it runs; the old table goes in the next task\n- title: Drop the old table\n  goal: Nothing reads orders_old and it is gone",
+      "source": "synthetic"
+    },
+    {
+      "pattern": "unchecked-assumption",
+      "expect": true,
+      "item": "thought",
+      "text": "The payment gateway probably retries on timeout, so I will not add idempotency keys. Writing the handler now.",
+      "source": "synthetic"
+    },
+    {
+      "pattern": "unchecked-assumption",
+      "expect": true,
+      "item": "said",
+      "text": "I assume VAT is always 10% here, so I hard-coded it into the invoice total.",
+      "source": "synthetic"
+    },
+    {
+      "pattern": "unchecked-assumption",
+      "expect": false,
+      "item": "thought",
+      "text": "Does the gateway retry on timeout? Let me read its client and the docs in vendor/ before deciding on idempotency keys.",
+      "source": "synthetic"
+    },
+    {
+      "pattern": "unchecked-assumption",
+      "expect": false,
+      "item": "said",
+      "text": "Renamed the invoice module and ran the tests: all green.",
+      "source": "synthetic"
     }
   ]
 }

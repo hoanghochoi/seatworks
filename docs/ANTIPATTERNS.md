@@ -92,6 +92,9 @@ second copy of state, a mutex added to make two copies agree.
 **Here.** *asked* — `wrapper`: whether a Peer's words say it adds a compat layer, adapter, shim,
 fallback or a second copy of state. `PEER.md` forbids it in words, and `outside-scope` cannot check
 it because that fact fires on where a file is, not on what it is for.
+At the plan, *asked* — `staged-plan`, at `add_tasks` and `amend_task`: whether the Lead's tasks
+build a stage the end state does not need, a temporary layer, a transition flag or the old and new
+ways side by side, with no constraint named that forces it.
 
 ### Architecture lock-in
 **Rule.** The first design is a proposal. A worker that cannot say what would make it wrong has not
@@ -101,6 +104,8 @@ checked it.
 **Here.** *caught* — `no-pushback`, when a Lead reports its lane ready after
 `attention.quietLaneTasks` (4) code tasks with no ask from any of its seats. The ask record is every
 push-back a seat made.
+In words, *asked* — `unchecked-assumption`: whether a Lead or a Peer builds on a belief about how
+the domain or the system behaves that it has not read, run or asked about.
 
 ### Priority myopia
 **Rule.** Order by what unblocks, not by label. A P2 that is the foundation of a P0 is done first.

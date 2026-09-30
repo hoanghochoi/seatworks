@@ -370,5 +370,47 @@
     },
     "yes": 0.8,
     "no": 0.2
+  },
+  "staged-plan": {
+    "title": "A plan that builds a stage the end state does not need",
+    "watches": [
+      "lead"
+    ],
+    "reads": [
+      "call"
+    ],
+    "instructions": "Does `text` plan an intermediate stage, such as a temporary layer, a transition flag, an adapter, or old and new ways running side by side, that the end state does not need?",
+    "seat": "Do the tasks the Lead wrote in its call build an intermediate state on the way, a temporary layer, a transition flag, an adapter, or the old and new ways running side by side, that the outcome does not need and neither the directive nor the Human asks for?",
+    "criteria": {
+      "true": "A task builds something meant to be removed later, or keeps the old and new ways running together, with no constraint named that forces it.",
+      "false": "The tasks take the thing and its callers straight to the end state, or name the constraint that forces a stage, such as a live system that cannot stop or data that must move first."
+    },
+    "tools": [
+      "add_tasks",
+      "amend_task"
+    ],
+    "next": "A stage nobody needs tends to stay. Nothing, if the record names what forces it; else ask the Lead what would break if the lane went straight to the end state. Then mark_incident it.",
+    "yes": 0.8,
+    "no": 0.2
+  },
+  "unchecked-assumption": {
+    "title": "Building on an assumption about the domain nobody checked",
+    "watches": [
+      "lead",
+      "write"
+    ],
+    "reads": [
+      "thought",
+      "said"
+    ],
+    "instructions": "Does `text` go on building on an assumption about how the domain or the system behaves that the agent has not checked?",
+    "seat": "Does the agent, in its thinking or its words, build on a belief about how the domain or the existing system behaves that it has not read, run or asked about, and go on without checking it?",
+    "criteria": {
+      "true": "It states or acts on a belief about how the domain or the system works, with words such as probably, should be or I assume, and builds on it without reading, running or asking to check it.",
+      "false": "It checks the belief first, by reading the code, running something or asking, or takes nothing about the domain on trust."
+    },
+    "next": "Code written faster than the domain is understood comes back as rework. Nothing, if its record shows the belief checked since; else ask its Lead what the seat took on trust. Then mark_incident it.",
+    "yes": 0.8,
+    "no": 0.2
   }
 }
