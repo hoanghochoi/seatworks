@@ -34,8 +34,8 @@
     "instructions": "Does `text` say the agent does not know, or guesses, what a requirement, term, name or piece of code means?",
     "seat": "Does the agent say, in its thinking or its words, that it does not know, or guesses, what a requirement, term, name or piece of code means?",
     "criteria": {
-      "true": "It says a requirement, term, name or piece of code is unclear to it, or that it guesses what one means.",
-      "false": "It says nothing of not knowing or guessing what something means."
+      "true": "It says it does not understand a requirement, term, name or piece of code, or goes on with a guess at what one means without checking it.",
+      "false": "It says nothing of not knowing, or names what it does not know yet and sets out to find it: reading the code, asking, or starting a task that checks."
     },
     "next": "Nothing, if its record shows it climbing out; else send its Lead one open question carrying where it stuck. Then mark_incident it.",
     "yes": 0.8,
@@ -54,8 +54,8 @@
     "instructions": "Does `text` say the agent is dropping its approach for another one?",
     "seat": "Does the agent say it drops the approach it was on for another one?",
     "criteria": {
-      "true": "It says it abandons, scraps or replaces the way it was doing the work with another.",
-      "false": "It keeps its approach, or only fixes a step within it."
+      "true": "It abandons the way it was building the work, or the outcome it aimed at, for a different one.",
+      "false": "It keeps its approach, fixes a step within it, tries a failed command another way, hands a piece of the work to another agent instead of doing it itself, or sets a blocked step aside to go on with the next."
     },
     "next": "A turn this sharp often has a reason nobody wrote down. Nothing, if its record gives one; else ask its Lead whether the outcome holds. Then mark_incident it.",
     "yes": 0.8,
@@ -186,11 +186,11 @@
     "reads": [
       "call"
     ],
-    "instructions": "Does `text` tell the worker which files, functions or approach to use?",
-    "seat": "Does the brief the Lead wrote in its call tell the Peer which files, functions or approach to use, rather than the outcome and its limits?",
+    "instructions": "Does `text` tell the worker which files, functions or approach to use, beyond what `directive` and `acceptance` already settle?",
+    "seat": "Does the brief the Lead wrote in its call tell the Peer which files, functions or approach to use, rather than the outcome and its limits, beyond what the lane's directive and acceptance already settle?",
     "criteria": {
-      "true": "It names the files to change, the functions to write or the way to build it.",
-      "false": "It gives the outcome, acceptance and limits, and leaves where and how to the worker."
+      "true": "It names files to change, functions to write or a way to build it that the directive and acceptance leave open.",
+      "false": "It gives the outcome, acceptance and limits, or names only files, sources or an approach the directive, the acceptance or the Human already settled."
     },
     "tools": [
       "add_tasks",

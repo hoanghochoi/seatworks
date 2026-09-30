@@ -7,6 +7,8 @@ import { appendRecord } from "./records.ts";
 /** Where a judge's answers are kept, and the event saying one could not be asked: the watch's apart from review's. */
 export type Assessments = { log: "assessments" | "reviews"; unasked: "watch.unasked" | "review.unasked" };
 
+export const WATCH: Assessments = { log: "assessments", unasked: "watch.unasked" };
+
 /** What an answer is kept beside: about whom and which of theirs, by which judge, and what it read. */
 type About = { subject: string; episode: string; by: string; state: Record<string, unknown> } & Record<string, unknown>;
 

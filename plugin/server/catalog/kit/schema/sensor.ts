@@ -56,7 +56,8 @@ const Facts = z.array(text).min(1).optional();
 
 /**
  * One condition: at or above `yes` it holds, at or below `no` it does not, between is unclear. `acts` names each fact that
- * opens a question about an act, and the act as it asks it, with the fact's own words where `{quote}` is.
+ * opens a question about an act, and the act as it asks it, with the fact's own words where `{quote}` is. `clears` names
+ * the facts it is asked of before they are booked, the fact's words in `quote`: a sure no books none.
  */
 const Condition = z
   .strictObject({
@@ -65,10 +66,17 @@ const Condition = z
     criteria: z.strictObject({ true: text, false: text }),
     acts: z.record(z.string(), text.includes("{quote}")).optional(),
     facts: Facts,
+    clears: z.array(text).min(1).optional(),
     yes: unit,
     no: unit,
   })
-  .refine((check) => check.no < check.yes, { error: "no must sit below yes" });
+  .refine((check) => check.no < check.yes, { error: "no must sit below yes" })
+  .refine(
+    (check) => !check.clears || (typeof check.instructions === "string" && check.instructions.includes("`quote`")),
+    {
+      error: "clears a fact but does not ask about its `quote`",
+    },
+  );
 
 /** One of several answers, taken at `sure` or more and unclear below; `after` names who an instruction must come from for it to be asked. */
 const Pick = z

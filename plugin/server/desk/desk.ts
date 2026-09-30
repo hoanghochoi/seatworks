@@ -56,6 +56,7 @@ import { startWaiting } from "./waiting/tasks.ts";
 import { type Moment, momentCases } from "./review/evidence.ts";
 import { judge } from "./review/asking.ts";
 import { type Look, lateCase, readLook } from "./watch/brains.ts";
+import { uncleared } from "./watch/clearing.ts";
 import { type Noticed, closeIncidentsOf, notice, placeOf, retell } from "./watch/notice.ts";
 import { Decisions } from "./watch/decisions.ts";
 import { Watcher } from "./watch/watcher.ts";
@@ -144,12 +145,16 @@ export class Desk {
     return notice(this.services, project, seat, findings);
   }
 
-  /** What the code saw in a seat's turn: its facts booked for whoever supervises, and the moment asked about as review's evidence. */
-  saw(project: Project, seat: Noticed, facts: Fact[], moment: Omit<Moment, "facts">): ReturnType<typeof notice> {
+  /**
+   * What the code saw in a seat's turn: its facts booked for whoever supervises, less those the sensor clears, and the
+   * moment asked about as review's evidence.
+   */
+  async saw(project: Project, seat: Noticed, facts: Fact[], moment: Omit<Moment, "facts">): ReturnType<typeof notice> {
     const place = placeOf(this.services.kit, project, seat);
-    for (const found of momentCases(this.services.kit, place, { ...moment, facts }))
+    const kept = await uncleared(this.services, project, seat, place, facts);
+    for (const found of momentCases(this.services.kit, place, { ...moment, facts: kept }))
       void judge(this.services, project, found);
-    return notice(this.services, project, seat, findingsOf(facts), place);
+    return notice(this.services, project, seat, findingsOf(kept), place);
   }
 
   async look(project: Project, seat: Noticed, look: Look): Promise<void> {

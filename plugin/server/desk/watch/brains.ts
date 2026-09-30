@@ -8,7 +8,7 @@ import { type Finding, factTitle } from "../../domain/incident.ts";
 import type { Lane } from "../../domain/lane.ts";
 import { type Project, conceptFile } from "../project/project.ts";
 import type { DeskServices } from "../services.ts";
-import { type Assessments, askKept, holds } from "../store/assessments.ts";
+import { WATCH, askKept, holds } from "../store/assessments.ts";
 import { list } from "../letters/envelope.ts";
 import type { Item } from "./decisions.ts";
 import { type Noticed, type Placed, ledgerOf, notice, placeIn } from "./notice.ts";
@@ -21,8 +21,6 @@ export type Look = {
   since: number;
   instruction?: { text: string; from: string[] };
 };
-
-const WATCH: Assessments = { log: "assessments", unasked: "watch.unasked" };
 
 /** A pattern by the name it is asked under, and for one asked `each` rule, the line it is asked against. */
 type Pattern = [string, PatternSpec, string?];

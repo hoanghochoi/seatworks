@@ -8,7 +8,8 @@ export type Level = "page" | "attend" | "note";
 /**
  * What a watch saw that the desk books as an incident; `theirs` when its quote is only the seat's words or command, and
  * `brain` when a brain read it rather than the code measured it: a brain may add to what the code saw, never stand in for
- * it, and so it `joins` the code's open incident of that kind as evidence rather than opening its own beside it.
+ * it, and so it `joins` the code's open incident of that kind as evidence rather than opening its own beside it. Only a
+ * check the catalog says clears a kind may keep such a fact from being booked.
  */
 export type Finding = {
   kind: string;
