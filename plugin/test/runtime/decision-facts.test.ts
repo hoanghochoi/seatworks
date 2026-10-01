@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { seatOf } from "../../server/catalog/kit/roles.ts";
 import { recordEvent } from "../../server/desk/store/event-log.ts";
 import { laneWithPeer } from "./harness.ts";
 import { book } from "./noticed.ts";
@@ -69,6 +70,15 @@ test("a sending-back on a review that ran nothing, and a review's accept with no
     ["rework-unrun", "L1-T1 was sent back on L1-R1, a review that ran nothing"],
     ["review-unchecked", "L1-R2 accepted with 1 changed file unread: a.txt"],
   ]);
+
+  // An agent whose calls reach Paseo's timeline only in part: what its record lacks is no evidence.
+  await h.call(lead, "lead", "start_review", { task: "L1-T1", focus: "And now?" });
+  const blind = h.ledger().tasks["L1-R3"]!.peer!;
+  const { harness } = seatOf(h.runtime.kit, h.agents.get(blind)!.provider)!;
+  harness.timeline = { ...harness.timeline, callsUnseen: true };
+  await h.call(blind, "reviewer", "done", { verdict: "accept", answer: "Right." });
+  await h.runtime.desk.settled(h.project);
+  assert.equal(opened(h).length, 2);
 });
 
 test("a long lane reported ready with nobody asking anything, over a gate growing slower, and a brief with a pasted history, are evidence", async () => {
@@ -85,7 +95,7 @@ test("a long lane reported ready with nobody asking anything, over a gate growin
     ...(context ? { context } : {}),
   });
   const added = await h.call(lead, "lead", "add_tasks", {
-    tasks: [brief("b"), brief("c"), brief("d"), brief("e", "x".repeat(5000))],
+    tasks: [brief("b"), brief("c"), brief("d"), brief("e", "x".repeat(9000))],
   });
   assert.equal(added.ok, true, added.text);
   for (const seconds of [10, 15, 31])
@@ -94,7 +104,7 @@ test("a long lane reported ready with nobody asking anything, over a gate growin
   assert.equal(reported.ok, true, reported.text);
   await h.runtime.desk.settled(h.project);
   assert.deepEqual(opened(h), [
-    ["brief-pasted", "e's context runs 5000 characters"],
+    ["brief-pasted", "e's context runs 9000 characters"],
     ["no-pushback", "L2 reported ready after 4 tasks with no ask from any of its seats"],
     ["gate-slowing", "L2's gate took 10, 15, 31 seconds over its last three runs"],
   ]);

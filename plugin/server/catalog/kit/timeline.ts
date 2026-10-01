@@ -1,6 +1,9 @@
 import type { HarnessSpec } from "./kit.ts";
 
-/** How a harness writes its timeline where it differs from the rest, as its harness file says. */
+/**
+ * How a harness writes its timeline where it differs from the rest, as its harness file says; `callsUnseen` when its
+ * agent's own calls reach Paseo's timeline only in part, so a call the record lacks is never read as one not made.
+ */
 export type Quirks = NonNullable<HarnessSpec["timeline"]>;
 
 /** The exit code a harness keeps beside the call rather than in its detail, where its quirks say. */

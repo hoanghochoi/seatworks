@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { join, resolve, sep } from "node:path";
 import { test } from "node:test";
 import type { StreamMessage } from "../../server/adapters/paseo/stream.ts";
 import type { Rules } from "../../server/runtime/watch/facts.ts";
@@ -311,4 +312,12 @@ test("a write outside what a seat holds asks for attention, and so does any prod
   assert.deepEqual(outside("/work/src/cart.ts", lead), [["attend", "/work/src/cart.ts"]]);
   assert.deepEqual(outside("/work/docs/plan.md", lead), [], "its notes and plans are prose");
   assert.deepEqual(outside("/var/folders/xy/T/probe.mjs", lead), [], "and its scratch is its own");
+  const copy = resolve(sep, "work");
+  const plans = rules({ cwd: copy, scope: ["docs/plans/active/**"] });
+  assert.deepEqual(
+    outside(join(copy, "docs", "plans", "active", "master-plan.md"), plans),
+    [],
+    "a scope written with / holds a path this platform writes with its own separator",
+  );
+  assert.equal(outside(join(copy, "src", "app.ts"), plans).length, 1);
 });

@@ -288,7 +288,7 @@ capability. There is no room and no thread to be naive in.
 **Rule.** Do not hand every worker the whole history. Give each one the field-shaped brief it needs.
 **Signs.** a brief that pastes a transcript; a context field longer than the goal it serves.
 **Here.** *caught* — `brief-pasted`, when a brief's context runs past `attention.briefContextChars`
-(4000). No transcript is ever forked; each seat is a fresh session with a shaped brief.
+(8000). No transcript is ever forked; each seat is a fresh session with a shaped brief.
 
 ### Sub-agent explosion
 **Rule.** Every fan-out needs a reconciler named before it starts.

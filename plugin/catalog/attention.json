@@ -32,7 +32,7 @@
   "testToSourceAt": 5,
   "quietLaneTasks": 4,
   "gateSlowerTimes": 2,
-  "briefContextChars": 4000,
+  "briefContextChars": 8000,
   "incidentsKept": 500,
   "destructive": "(?:^|[;&|(`{\\n]|\\$\\(|\\b(?:sudo|xargs|exec|env|nohup|time|command|then|do|else)\\s+|-exec(?:dir)?\\s+|\\b(?:ba|z)?sh\\s+-l?c\\s+)\\s*['\"]?(?:rm\\s+(?:-\\S+\\s+)*(?:-[a-z]*[rf][a-z]*|--(?:recursive|force)\\b)|git\\s+(?:-C\\s+\\S+\\s+)?(?:reset\\s+--hard|clean\\s+-[a-z]*f|push\\s+[^|;&]*(?:--force|-f)\\b|branch\\s+(?:-\\S+\\s+)*(?-i:-D)\\b|branch\\b(?=[^|;&]*\\s(?:-[a-z]*d|--delete))[^|;&]*\\s(?:-[a-z]*f|--force)\\b|stash\\s+(?:drop|clear)\\b|checkout\\s+(?:\\S+\\s+)*--\\s+\\.(?=\\s|$)|restore\\s+(?:-\\S+\\s+)*\\.(?=\\s|$))|remove-item\\b[^|;&\\n]*\\s-r[a-z]*\\b|(?:rmdir|rd)\\s+(?:\\S+\\s+)*/s\\b|find\\b[^|;&\\n]*\\s-delete\\b|(?:pkill|killall)\\b|kill\\s+(?:-\\S+\\s+)*-(?:9|kill|sigkill)\\b|terraform\\s+(?:-\\S+\\s+)*destroy\\b|kubectl\\b[^|;&\\n]*\\sdelete\\b)|--force-with-lease|\\bdrop\\s+(?:table|database)\\b|\\btruncate\\s+table\\b|\\bdelete\\s+from\\b",
   "scratch": "^(?:\\$\\{?TMPDIR\\}?|/tmp|/private/tmp|(?i:%TEMP%|\\$env:TEMP))(?:[/\\\\]|$)",
