@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { can, seatOf } from "../../catalog/kit/roles.ts";
+import { can } from "../../catalog/kit/roles.ts";
 import { fileKinds } from "../../catalog/kit/ecosystem-patterns.ts";
 import { diffCounts } from "../../core/git-diff.ts";
 import type { StreamRow } from "../../core/ports.ts";
@@ -171,8 +171,6 @@ function briefsPasted(args: Record<string, unknown>, limit: number): Fact[] {
 
 /** A review's accept with no command run, or with files its change touched never read, as the reviewer's own calls show. */
 async function reviewUnchecked(services: Deciding, reviewer: string, ledger: Ledger, review: Task): Promise<Fact[]> {
-  const provider = (await services.roster.look(reviewer).catch(() => undefined))?.provider;
-  if (provider && seatOf(services.kit, provider)?.harness.timeline?.callsUnseen) return [];
   const rows = await services.roster.history(reviewer, HISTORY).catch(() => []);
   const details = rows
     .filter((row) => row.item.type === "tool_call")

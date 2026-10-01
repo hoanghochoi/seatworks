@@ -43,7 +43,6 @@ export const HarnessFile = z
         exitField: text.optional(),
         pseudoCalls: z.array(z.strictObject({ name: text, detail: text })).optional(),
         unparsed: z.strictObject({ input: text, error: Pattern }).optional(),
-        callsUnseen: z.literal(true).optional(),
       })
       .optional(),
     /** An agent with no settings file of a seat's own has none; every role then sits on it. */

@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { seatOf } from "../../server/catalog/kit/roles.ts";
 import { recordEvent } from "../../server/desk/store/event-log.ts";
 import { laneWithPeer } from "./harness.ts";
 import { book } from "./noticed.ts";
@@ -70,15 +69,6 @@ test("a sending-back on a review that ran nothing, and a review's accept with no
     ["rework-unrun", "L1-T1 was sent back on L1-R1, a review that ran nothing"],
     ["review-unchecked", "L1-R2 accepted with 1 changed file unread: a.txt"],
   ]);
-
-  // An agent whose calls reach Paseo's timeline only in part: what its record lacks is no evidence.
-  await h.call(lead, "lead", "start_review", { task: "L1-T1", focus: "And now?" });
-  const blind = h.ledger().tasks["L1-R3"]!.peer!;
-  const { harness } = seatOf(h.runtime.kit, h.agents.get(blind)!.provider)!;
-  harness.timeline = { ...harness.timeline, callsUnseen: true };
-  await h.call(blind, "reviewer", "done", { verdict: "accept", answer: "Right." });
-  await h.runtime.desk.settled(h.project);
-  assert.equal(opened(h).length, 2);
 });
 
 test("a long lane reported ready with nobody asking anything, over a gate growing slower, and a brief with a pasted history, are evidence", async () => {
