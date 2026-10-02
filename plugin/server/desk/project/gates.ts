@@ -19,7 +19,14 @@ type GateVerdict = { ok: boolean; text: string; ran: boolean };
 /** One command of a gate run: the project's gate, or a risk rule's rehearsal, named as `what`. */
 type Step = { command: string; what: string };
 
-type StepRun = Step & { ok: boolean; seconds: number; tail: string; logFile: string; failed: string };
+type StepRun = Step & {
+  ok: boolean;
+  code: number | null;
+  seconds: number;
+  tail: string;
+  logFile: string;
+  failed: string;
+};
 
 /** The rehearsals of the risk rules `files` reach: a change git cannot read meets every rule, not none. */
 function rehearsals(project: Project, kit: Kit, files: string[] | undefined): Step[] {
@@ -53,7 +60,15 @@ async function runSteps(
       : result.timedOut
         ? `timed out after ${minutes} minutes`
         : `failed with exit ${result.code}`;
-    runs.push({ ...step, ok: result.ok, seconds: result.seconds, tail: result.tail, logFile, failed });
+    runs.push({
+      ...step,
+      ok: result.ok,
+      code: result.code,
+      seconds: result.seconds,
+      tail: result.tail,
+      logFile,
+      failed,
+    });
     if (stopAtRed && !result.ok) break;
   }
   return runs;
@@ -79,6 +94,7 @@ export async function laneGate(
       lane: lane.id,
       seconds: run.seconds,
       command: run.command,
+      code: run.code,
     });
   const text = runs.map((run) =>
     run.ok

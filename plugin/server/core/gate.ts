@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { closeSync, mkdirSync, openSync, readSync, statSync, writeSync } from "node:fs";
+import { closeSync, fstatSync, mkdirSync, openSync, readSync, statSync, writeSync } from "node:fs";
 import { dirname } from "node:path";
 
 type GateResult = {
@@ -65,7 +65,8 @@ export function runGate(
   mkdirSync(dirname(logFile), { recursive: true });
   const started = Date.now();
   const fd = openSync(logFile, "w");
-  writeSync(fd, `$ ${command}\n`);
+  const head = `$ ${command}\n`;
+  writeSync(fd, head);
   return new Promise((resolve) => {
     // Straight to the log fd: a pipe would be inherited by leftover processes and hold "close" open indefinitely.
     const child = spawn(command, {
@@ -84,18 +85,22 @@ export function runGate(
     const timer = setTimeout(() => kill("timedOut"), timeoutMs);
     const onStop = () => kill("stopped");
     let answered = false;
-    const finish = (code: number | null) => {
+    const finish = (code: number | null, said?: string) => {
       if (answered) return;
       answered = true;
       clearTimeout(timer);
       stop?.removeEventListener("abort", onStop);
       killGroup(child.pid);
+      // A red gate's tail is all its reader sees: one that printed nothing says so, rather than showing nothing.
+      if (said) note(fd, `${said}\n`);
+      else if (code !== 0 && logSize(fd) <= Buffer.byteLength(head))
+        note(fd, `(the command printed nothing and exited ${code ?? "on a signal"})\n`);
       closeLog(fd);
       resolve(verdict(code, ended, started, logFile));
     };
     if (stop?.aborted) onStop();
     else stop?.addEventListener("abort", onStop, { once: true });
-    child.on("error", () => finish(127));
+    child.on("error", (error) => finish(127, `the command could not be started: ${error.message}`));
     // exit, not close: the command's own answer, whatever it left running behind it.
     child.on("exit", (code, signal) => finish(code ?? (signal ? null : 0)));
   });
@@ -116,6 +121,23 @@ function verdict(
     seconds,
     tail: tailOf(lastBytes(logFile)),
   };
+}
+
+function logSize(fd: number): number {
+  try {
+    return fstatSync(fd).size;
+  } catch {
+    // A log that cannot be read is no proof the command printed nothing.
+    return Infinity;
+  }
+}
+
+function note(fd: number, text: string): void {
+  try {
+    writeSync(fd, text);
+  } catch {
+    // The log is closed already: the verdict still carries the exit code.
+  }
 }
 
 function closeLog(fd: number): void {

@@ -52,17 +52,17 @@ export function deskFacts(ledger: Ledger, reading: Reading): LaneFact[] {
     });
 }
 
-/** One task going round: each sending-back is a local fix to what the last one did not settle. */
+/**
+ * One task going round: each sending-back is a local fix to what the last one did not settle. The words name the loop,
+ * not how far it has gone, so a loop marked noise stays marked as it goes on; another task looping is new.
+ */
 function reworkLoop({ here, reading }: LaneRecord): Found {
   const looping = here.filter((task) => !settled(task) && reworksOf(task) >= reading.reworksAt);
   if (looping.length === 0) return undefined;
   return [
     "rework-loop",
     looping
-      .map(
-        (task) =>
-          `${task.id} (${task.title}) has been sent back ${reworksOf(task)} times, last outcome ${task.handback?.outcome ?? "none recorded"}`,
-      )
+      .map((task) => `${task.id} (${task.title}) has been sent back ${reading.reworksAt} times or more`)
       .join("; "),
   ];
 }
@@ -72,9 +72,10 @@ function patchedNotFixed({ here, reading }: LaneRecord): Found {
   const patched = here.filter((task) => !settled(task) && reworksOf(task) > 0);
   const sendings = patched.reduce((total, task) => total + reworksOf(task), 0);
   if (patched.length < 2 || sendings < reading.reworksAt) return undefined;
+  // The tasks, not the count, are the evidence: another sending-back of the same tasks is the same hole.
   return [
     "patched-not-fixed",
-    `${sendings} sendings-back across ${patched.length} tasks still open in this lane: ${patched.map((task) => `${task.id} ×${reworksOf(task)}`).join(", ")}`,
+    `${patched.length} tasks still open in this lane were sent back, ${reading.reworksAt} times or more between them: ${patched.map((task) => task.id).join(", ")}`,
   ];
 }
 

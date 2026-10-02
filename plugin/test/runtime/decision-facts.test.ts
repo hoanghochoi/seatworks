@@ -59,6 +59,14 @@ test("a sending-back on a review that ran nothing, and a review's accept with no
   await h.call(reviewer, "reviewer", "done", { verdict: "changes", answer: "It reads wrong." });
   await h.call(lead, "lead", "rework", { task: "L1-T1", text: "Fix it." });
   await h.call(peer, "peer", "done", { outcome: "complete", summary: "fixed" });
+  const handbacks = h.heard(lead).join("\n").split("HANDBACK L1-T1").slice(1);
+  assert.equal(handbacks.length, 2);
+  assert.doesNotMatch(handbacks[0]!, /Nothing was committed/);
+  assert.match(
+    handbacks[1]!,
+    /\nNothing was committed since its last hand-back, which named this same commit\.\n/,
+    "a hand-back after a sending-back with no commit between says it carries nothing new",
+  );
   await h.call(lead, "lead", "start_review", { task: "L1-T1", focus: "Is it right now?" });
   const second = h.ledger().tasks["L1-R2"]!.peer!;
   const ran = { type: "shell", command: "node --test" };
@@ -89,7 +97,7 @@ test("a long lane reported ready with nobody asking anything, over a gate growin
   });
   assert.equal(added.ok, true, added.text);
   for (const seconds of [10, 15, 31])
-    recordEvent(h.project, { kind: "gate.passed", lane: "L2", seconds, command: "npm test" });
+    recordEvent(h.project, { kind: "gate.passed", lane: "L2", seconds, command: "npm test", code: 0 });
   const reported = await h.call(lead, "lead", "report", { summary: "done", ready: true });
   assert.equal(reported.ok, true, reported.text);
   await h.runtime.desk.settled(h.project);

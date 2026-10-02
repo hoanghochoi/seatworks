@@ -124,10 +124,10 @@ test("a lane's record shows loops, patching, unfinished acceptance and unconverg
 
   const loop = quote(looping, "rework-loop");
   assert.equal(loop.seat, "lead-1", "the Lead decides to send it back, so the Lead is who this is about");
-  assert.match(loop.fact.quote, /L1-T1 \(Apply discount\) has been sent back 3 times, last outcome partial/);
+  assert.match(loop.fact.quote, /L1-T1 \(Apply discount\) has been sent back 3 times or more/);
   assert.match(
     quote(spread, "patched-not-fixed").fact.quote,
-    /3 sendings-back across 3 tasks .*L1-T1 ×1, L1-T2 ×1, L1-T3 ×1/,
+    /3 tasks still open in this lane were sent back, 3 times or more between them: L1-T1, L1-T2, L1-T3/,
   );
   assert.match(
     quote(reviewed, "reviews-unconverged").fact.quote,
@@ -141,12 +141,18 @@ test("a lane's record shows loops, patching, unfinished acceptance and unconverg
   const first = quote(held, "rework-loop").fact.quote;
   assert.equal(quote(held, "rework-loop").fact.quote, first, "reading the same ledger twice says the same words");
   held.tasks["L1-T1"]!.reworks = 4;
-  assert.notEqual(quote(held, "rework-loop").fact.quote, first, "a fourth sending-back is new evidence");
+  assert.equal(
+    quote(held, "rework-loop").fact.quote,
+    first,
+    "a fourth sending-back is the same loop, so a noise mark holds",
+  );
+  held.tasks["L1-T2"] = task({ id: "L1-T2", reworks: 3 });
+  assert.notEqual(quote(held, "rework-loop").fact.quote, first, "another task looping is new evidence");
   // The book keys an incident by seat and kind, and the seat is the Lead, so one fact of a kind per lane.
   const two = ledgerOf([task({ id: "L1-T1", reworks: 3 }), task({ id: "L1-T2", reworks: 3 })]);
   const loops = deskFacts(two, READING).filter((seen) => seen.fact.kind === "rework-loop");
   assert.equal(loops.length, 1);
-  assert.match(loops[0]!.fact.quote, /L1-T1 .*sent back 3 times.*; L1-T2 .*sent back 3 times/);
+  assert.match(loops[0]!.fact.quote, /L1-T1 .*sent back 3 times or more; L1-T2 .*sent back 3 times or more/);
 
   const many = ledgerOf(
     Array.from({ length: 7 }, (_, index) =>

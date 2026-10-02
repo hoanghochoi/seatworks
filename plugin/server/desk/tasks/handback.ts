@@ -166,9 +166,12 @@ function taskBody(
   { commit, uncommitted, synced, changed, notes }: Work,
 ): { outcome: string; body: string } {
   const outcome = args.outcome?.trim() ?? "";
+  // A hand-back on the commit the last one named carries no new work, whatever its summary says.
+  const unchanged = commit !== undefined && commit === task.handback?.commit;
   const lines = [
     `Outcome: ${outcome}`,
     `Commit: ${commit ?? "none"}${uncommitted ? " (the working copy still has uncommitted changes)" : ""}`,
+    ...(unchanged ? ["Nothing was committed since its last hand-back, which named this same commit."] : []),
     ...(synced ? [synced] : []),
     "",
     args.summary?.trim() || "No summary given.",

@@ -143,13 +143,12 @@ test("a lane's own record raises an incident about its Lead once, held while the
   assert.equal(loops().length, 1, "the same three sendings-back are not raised again once marked");
   await rework(4);
   await h.tick();
-  assert.equal(loops().length, 2, "a fourth sending-back is something new to say");
+  assert.equal(loops().length, 1, "a fourth sending-back of the same task is the same loop, so the noise mark holds");
 
-  assert.equal((await h.call(sup, "supervisor", "mark_incident", { id: loops()[1]!.id, verdict: "noise" })).ok, true);
   await rework(5);
   h.agents.get(lead)!.archivedAt = new Date().toISOString();
   await h.tick();
-  assert.equal(loops().length, 2, "an incident about a Lead that has gone is one nobody can close");
+  assert.equal(loops().length, 1, "an incident about a Lead that has gone is one nobody can close");
 });
 
 const quote = "the same action failing 3 times: Bash: npm test";

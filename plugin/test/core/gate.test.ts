@@ -50,3 +50,16 @@ test("the gate reports exit, output tail and timeouts", async () => {
   );
   assert.equal(noisy.tail.length <= 3000, true);
 });
+
+test("a red gate that printed nothing, or never started, says so in its tail, and a quiet pass adds nothing", async () => {
+  const dir = tempDir("sw2-gate-quiet-");
+  const silent = await runGate("exit 2", dir, join(dir, "silent.log"), 10_000);
+  assert.deepEqual([silent.ok, silent.code], [false, 2]);
+  assert.match(silent.tail, /\(the command printed nothing and exited 2\)/);
+  const unstarted = await runGate("echo never", join(dir, "gone"), join(dir, "unstarted.log"), 10_000);
+  assert.deepEqual([unstarted.ok, unstarted.code], [false, 127]);
+  assert.match(unstarted.tail, /the command could not be started: .+/);
+  const quiet = await runGate("exit 0", dir, join(dir, "quiet.log"), 10_000);
+  assert.equal(quiet.ok, true);
+  assert.doesNotMatch(quiet.tail, /printed nothing/);
+});
