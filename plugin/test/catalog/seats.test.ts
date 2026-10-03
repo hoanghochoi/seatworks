@@ -401,7 +401,7 @@ test("an agent configured in its own file format gets its catalog trimmed, its s
   );
 });
 
-test("an owner's own agent config a seat takes keys from, when it cannot be read, is said in the daemon's log, and the seat takes none of it", (t) => {
+test("an owner's own agent config a seat takes keys from, when it cannot be read, is said in the daemon's log, and a seat keeps what it took before", (t) => {
   const offering = "process.stdout.write(JSON.stringify({models:[{slug:'a'}]}))";
   const agent = JSON.parse(cx(["node", "-e", offering])) as { settings: Record<string, unknown> };
   agent.settings.inherits = { from: "HOME/.cx/config.toml", keys: ["model_provider"] };
@@ -415,15 +415,26 @@ test("an owner's own agent config a seat takes keys from, when it cannot be read
   const team = withHarness(resolveTeam(kit), "lead", kit.harnesses.cx!);
   const home = tempDir("sw2-cx-home-");
   mkdirSync(join(home, ".cx"), { recursive: true });
-  writeFileSync(join(home, ".cx", "config.toml"), 'model_provider = "mine\n');
-  const said = reported(t);
-  materialize(kit, team, "lead", home, project, {});
+  const own = join(home, ".cx", "config.toml");
   const dir = seatDir(kit, team.roles.lead!.role, kit.harnesses.cx!, home, project);
-  assert.equal(readConfig<{ model_provider?: string }>(join(dir, "config.toml"), {}).model_provider, undefined);
+  const provider = () => readConfig<{ model_provider?: string }>(join(dir, "config.toml"), {}).model_provider;
+  const said = reported(t);
+
+  const broken = 'model_provider = "mine\n';
+  writeFileSync(own, broken);
+  materialize(kit, team, "lead", home, project, {});
+  assert.equal(provider(), undefined, "a new seat has nothing to keep");
   assert.match(
     said(),
-    /config\.toml is there but could not be read: it is not TOML[^\n]*, so Cx seats take none of its model_provider/,
+    /config\.toml is there but could not be read: it is not TOML[^\n]*, so Cx seats keep the model_provider they took from it before, and a new seat takes none/,
   );
+
+  writeFileSync(own, 'model_provider = "mine"\n');
+  materialize(kit, team, "lead", home, project, {});
+  assert.equal(provider(), "mine");
+  writeFileSync(own, broken);
+  materialize(kit, team, "lead", home, project, {});
+  assert.equal(provider(), "mine", "a session made on a provider still finds it when the owner's config breaks");
 });
 
 test("a changed skill reaches the seat as a new copy, the one read before stays as it was, and a copy nobody touches for two weeks goes", () => {

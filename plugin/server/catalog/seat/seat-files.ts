@@ -58,14 +58,21 @@ export function seedRecords(kit: Kit, state: string): string[] {
   return seeded;
 }
 
-/** The keys a harness takes from the owner's own config: which model providers exist, and how this machine sandboxes, are theirs to say. */
-function inherited(harness: HarnessSpec, homeDir: string): Json {
+/**
+ * The keys a harness takes from the owner's own config: which model providers exist, and how this machine sandboxes, are
+ * theirs to say. One that cannot be read leaves a seat what it took before: a session made on a provider cannot resume
+ * on a config that lost it.
+ */
+function inherited(harness: HarnessSpec, homeDir: string, seatFile: string): Json {
   const inherits = harness.settings?.inherits;
   if (!inherits) return {};
   const path = expandHome(inherits.from, homeDir);
   const fault = configFault(path);
-  if (fault) daemonLog.error(`${fault}, so ${harness.label} seats take none of its ${inherits.keys.join(", ")}`);
-  const own = readConfig<Json>(path, {});
+  if (fault)
+    daemonLog.error(
+      `${fault}, so ${harness.label} seats keep the ${inherits.keys.join(", ")} they took from it before, and a new seat takes none`,
+    );
+  const own = readConfig<Json>(fault ? seatFile : path, {});
   return Object.fromEntries(inherits.keys.filter((key) => own[key] !== undefined).map((key) => [key, own[key]]));
 }
 
@@ -90,8 +97,9 @@ export function writeRoleSettings(
     layered(catalog, stateWritesSetting(harness, role, seat.state, kitSettings)),
     refusalSettings(kit, harness, role, seat.homeDir),
   ) as Json;
-  const wanted = layered(layered(inherited(harness, seat.homeDir), kitSettings), extra) as Json;
-  record.note(writeConfigIfChanged(join(seat.dir, file), wanted), file);
+  const seatFile = join(seat.dir, file);
+  const wanted = layered(layered(inherited(harness, seat.homeDir, seatFile), kitSettings), extra) as Json;
+  record.note(writeConfigIfChanged(seatFile, wanted), file);
 }
 
 const catalogs = new Map<string, string>();
